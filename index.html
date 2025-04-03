@@ -36,6 +36,18 @@
             margin-bottom: 20px;
             text-align: center;
         }
+        .button {
+            margin-top: 10px;
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .button:hover {
+            background-color: #45a049;
+        }
     </style>
 </head>
 <body>
@@ -69,9 +81,9 @@
             <div id="original-waypoints"></div>
             <div id="reflected-waypoints"></div>
             
-            <h3>Reflected Path JSON:</h3>
-            <pre id="json-output" style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; overflow-x: auto; max-width: 100%;"></pre>
-            <button id="copy-button" style="margin-top: 10px; padding: 5px 10px;">Copy JSON</button>
+            <h3>Reflected Path:</h3>
+            <button id="save-button" class="button">Save Reflected Path</button>
+            <div id="save-status" style="margin-top: 10px; color: green;"></div>
         </div>
     </div>
 
@@ -83,9 +95,14 @@
         const waypointsInfo = document.getElementById('waypoints-info');
         const originalWaypointsDiv = document.getElementById('original-waypoints');
         const reflectedWaypointsDiv = document.getElementById('reflected-waypoints');
+        const saveStatus = document.getElementById('save-status');
         
         // The reflection line value
         const reflectionLine = 8.052 / 2; // = 4.026
+        
+        // Variable to store the reflected path data
+        let reflectedPathData = null;
+        let originalFileName = '';
         
         // Add event listener to file input
         fileInput.addEventListener('change', handleFileSelect);
@@ -96,6 +113,9 @@
             if (!file) {
                 return;
             }
+            
+            // Save the original filename
+            originalFileName = file.name;
             
             const reader = new FileReader();
             
@@ -157,7 +177,7 @@
             });
             
             // Create a complete reflected path object
-            const reflectedPathData = JSON.parse(JSON.stringify(pathData));
+            reflectedPathData = JSON.parse(JSON.stringify(pathData));
             reflectedPathData.waypoints = reflectedWaypoints;
             
             // Reflect rotation values
@@ -169,28 +189,9 @@
                 reflectedPathData.idealStartingState.rotation = reflectRotation(reflectedPathData.idealStartingState.rotation);
             }
             
-            // Display the JSON output
-            const jsonOutput = document.getElementById('json-output');
-            jsonOutput.textContent = JSON.stringify(reflectedPathData, null, 2);
-            
-            // Set up copy button
-            const copyButton = document.getElementById('copy-button');
-            copyButton.addEventListener('click', () => {
-                navigator.clipboard.writeText(JSON.stringify(reflectedPathData, null, 2))
-                    .then(() => {
-                        copyButton.textContent = 'Copied!';
-                        setTimeout(() => {
-                            copyButton.textContent = 'Copy JSON';
-                        }, 2000);
-                    })
-                    .catch(err => {
-                        console.error('Failed to copy text: ', err);
-                        copyButton.textContent = 'Copy failed';
-                        setTimeout(() => {
-                            copyButton.textContent = 'Copy JSON';
-                        }, 2000);
-                    });
-            });
+            // Set up save button
+            const saveButton = document.getElementById('save-button');
+            saveButton.addEventListener('click', saveReflectedPath);
             
             // Display waypoints info
             displayWaypointsInfo(pathData.waypoints, reflectedWaypoints);
@@ -202,6 +203,50 @@
             canvas.style.display = 'block';
             legend.style.display = 'flex';
             waypointsInfo.style.display = 'block';
+        }
+        
+        // Function to save the reflected path as a JSON file
+        function saveReflectedPath() {
+            if (!reflectedPathData) {
+                alert('No reflected path data available');
+                return;
+            }
+            
+            // Create a blob with the JSON data
+            const jsonString = JSON.stringify(reflectedPathData, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            
+            // Create a download link
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            
+            // Generate filename based on original file
+            let filename = 'reflected-path.path';
+            if (originalFileName) {
+                // Add 'reflected-' prefix to the original filename
+                const nameParts = originalFileName.split('.');
+                const extension = nameParts.pop();
+                filename = nameParts.join('.') + '-reflected.' + extension;
+            }
+            
+            a.href = url;
+            a.download = filename;
+            
+            // Trigger download
+            document.body.appendChild(a);
+            a.click();
+            
+            // Clean up
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                saveStatus.textContent = 'File saved successfully: ' + filename;
+                
+                // Clear status message after 3 seconds
+                setTimeout(() => {
+                    saveStatus.textContent = '';
+                }, 3000);
+            }, 0);
         }
         
         function displayWaypointsInfo(originalWaypoints, reflectedWaypoints) {

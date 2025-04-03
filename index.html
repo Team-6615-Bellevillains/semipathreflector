@@ -303,6 +303,12 @@
                 updateBounds(waypoint.nextControl);
             });
             
+            // Always include the field boundaries: origin (0,0) to max field size (17.548, 8.052)
+            minX = 0;
+            minY = 0;
+            maxX = 17.548;
+            maxY = 8.052;
+            
             // Add padding
             const padding = 50;
             const width = canvas.width - 2 * padding;
@@ -339,7 +345,12 @@
             // Label the reflection line
             ctx.fillStyle = 'green';
             ctx.font = '12px Arial';
-            ctx.fillText(`y = ${reflectionLine.toFixed(3)}`, canvas.width - padding - 100, canvas.height - padding - (reflectionLine - minY) * scale - 5);
+            ctx.fillText(`y = ${reflectionLine.toFixed(3)} (Field Center Line)`, canvas.width - padding - 200, canvas.height - padding - (reflectionLine - minY) * scale - 5);
+            
+            // Draw field dimensions label
+            ctx.fillStyle = '#444';
+            ctx.font = '12px Arial';
+            ctx.fillText(`Field: ${maxX.toFixed(3)} x ${maxY.toFixed(3)} m`, canvas.width - padding - 200, padding + 20);
             
             // Function to draw a path
             function drawPath(waypoints, color) {
@@ -424,13 +435,33 @@
             
             // Draw coordinate axes
             ctx.beginPath();
+            
+            // X-axis
             ctx.moveTo(padding, canvas.height - padding);
             ctx.lineTo(canvas.width - padding, canvas.height - padding);
+            
+            // Y-axis
             ctx.moveTo(padding, canvas.height - padding);
             ctx.lineTo(padding, padding);
+            
             ctx.strokeStyle = '#888';
             ctx.lineWidth = 1;
             ctx.stroke();
+            
+            // Highlight the origin point (0,0)
+            const originX = padding + (-minX) * scale;
+            const originY = canvas.height - padding - (-minY) * scale;
+            
+            // Draw a small circle at the origin
+            ctx.beginPath();
+            ctx.arc(originX, originY, 4, 0, Math.PI * 2);
+            ctx.fillStyle = '#000';
+            ctx.fill();
+            
+            // Label the origin
+            ctx.font = '12px Arial';
+            ctx.fillStyle = '#000';
+            ctx.fillText('(0,0)', originX + 6, originY - 6);
             
             // Draw tick marks and labels
             ctx.fillStyle = '#888';

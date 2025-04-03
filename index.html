@@ -129,7 +129,13 @@
         // Function to reflect a rotation angle (add 180 degrees)
         function reflectRotation(angle) {
             if (angle === undefined || angle === null) return angle;
-            return (angle + 180) % 360;
+
+            angle = -angle;
+            if (angle < 0) {
+                angle += 360
+            }
+
+            return angle;
         }
         
         function processPathData(pathData) {
